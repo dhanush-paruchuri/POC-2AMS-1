@@ -1,0 +1,29 @@
+# docker-compose.yml - Updated to compatible version
+services:
+  weaviate:
+    image: semitechnologies/weaviate:1.24.0  # Updated to newer version
+    ports:
+      - "${WEAVIATE_HTTP_PORT:-8080}:8080"    # REST API
+      - "${WEAVIATE_GRPC_PORT:-8081}:8081"    # gRPC API
+    environment:
+      QUERY_DEFAULTS_LIMIT: ${QUERY_DEFAULTS_LIMIT:-25}
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: '${AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED:-true}'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      
+      # Bedrock Configuration
+      DEFAULT_VECTORIZER_MODULE: '${DEFAULT_VECTORIZER_MODULE:-text2vec-aws}'
+      ENABLE_MODULES: '${ENABLE_MODULES:-text2vec-aws}'
+      
+      # AWS Configuration
+      AWS_REGION: '${AWS_REGION:-us-east-1}'
+      AWS_ACCESS_KEY_ID: '${AWS_ACCESS_KEY_ID}'
+      AWS_SECRET_ACCESS_KEY: '${AWS_SECRET_ACCESS_KEY}'
+      
+      CLUSTER_HOSTNAME: '${CLUSTER_HOSTNAME:-node1}'
+      GRPC_PORT: ${WEAVIATE_GRPC_PORT:-8081}
+      
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+
+volumes:
+  weaviate_data:

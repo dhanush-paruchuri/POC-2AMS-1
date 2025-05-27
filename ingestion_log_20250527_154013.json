@@ -1,0 +1,147 @@
+{
+  "start_time": "2025-05-27T15:36:12.800420",
+  "extraction_results": [
+    {
+      "yaml_file": "raw_movedaily.yaml",
+      "csv_file": "MoveDaily.csv",
+      "table_name": "raw_movedaily_operations",
+      "success": true,
+      "error": null,
+      "record_count": 50,
+      "column_count": 109,
+      "processing_time": "2025-05-27T20:36:12.822468+00:00"
+    },
+    {
+      "yaml_file": "raw_move.yaml",
+      "csv_file": "Move.csv",
+      "table_name": "raw_move_orders",
+      "success": true,
+      "error": null,
+      "record_count": 50,
+      "column_count": 73,
+      "processing_time": "2025-05-27T20:36:12.834490+00:00"
+    },
+    {
+      "yaml_file": "raw_customer.yaml",
+      "csv_file": "Customer.csv",
+      "table_name": "raw_customer_master",
+      "success": true,
+      "error": null,
+      "record_count": 50,
+      "column_count": 54,
+      "processing_time": "2025-05-27T20:36:12.844024+00:00"
+    }
+  ],
+  "upload_results": {
+    "datasets": {
+      "total_attempted": 3,
+      "successful": 3,
+      "failed": 0,
+      "successful_uploads": [
+        {
+          "index": 0,
+          "table_name": "raw_movedaily_operations",
+          "zone": "Raw",
+          "uuid": "63c3fa75-bea8-5659-a3c1-45822fc463ff",
+          "record_count": 50
+        },
+        {
+          "index": 1,
+          "table_name": "raw_move_orders",
+          "zone": "Raw",
+          "uuid": "8fe5c7fd-6a81-5f91-b8c4-16a9b86bb218",
+          "record_count": 50
+        },
+        {
+          "index": 2,
+          "table_name": "raw_customer_master",
+          "zone": "Raw",
+          "uuid": "de7410c9-7dc0-5864-b5bd-ad25a0ca7dc8",
+          "record_count": 50
+        }
+      ],
+      "failed_uploads": [],
+      "uploaded_datasets_map": {
+        "raw_movedaily_operations": "63c3fa75-bea8-5659-a3c1-45822fc463ff",
+        "raw_move_orders": "8fe5c7fd-6a81-5f91-b8c4-16a9b86bb218",
+        "raw_customer_master": "de7410c9-7dc0-5864-b5bd-ad25a0ca7dc8"
+      }
+    },
+    "relationships": {
+      "total_attempted": 3,
+      "successful": 3,
+      "failed": 0,
+      "successful_uploads": [
+        {
+          "index": 0,
+          "relationship": "raw_move_orders -> raw_customer_master",
+          "uuid": "493d5b0e-73bd-5805-ab7a-0cb11ca7db4b"
+        },
+        {
+          "index": 1,
+          "relationship": "raw_movedaily_snapshot -> raw_customer_master",
+          "uuid": "57d15978-c6d5-5a81-b5fd-e9f63c47b9f6"
+        },
+        {
+          "index": 2,
+          "relationship": "raw_move_orders -> raw_movedaily_snapshot",
+          "uuid": "90b4416b-e0f8-50a8-8ee7-2e736c433339"
+        }
+      ],
+      "failed_uploads": []
+    },
+    "domain_tags": {
+      "total_attempted": 8,
+      "successful": 8,
+      "failed": 0,
+      "successful_uploads": [
+        {
+          "index": 0,
+          "tag_name": "Customer_Management",
+          "uuid": "74954b86-8237-5601-a8b6-1fd229ba8e76"
+        },
+        {
+          "index": 1,
+          "tag_name": "Operations",
+          "uuid": "e4d07d2b-212a-5384-a57c-6208fd67f4f4"
+        },
+        {
+          "index": 2,
+          "tag_name": "Marketing",
+          "uuid": "b14249a2-9ce3-5a9a-ab4e-007b0f2deb80"
+        },
+        {
+          "index": 3,
+          "tag_name": "Sales",
+          "uuid": "4d5ebf59-a373-5f51-bd01-12b51c72eea6"
+        },
+        {
+          "index": 4,
+          "tag_name": "Customer_Service",
+          "uuid": "5919076c-7965-515a-9b94-6a52b1de5973"
+        },
+        {
+          "index": 5,
+          "tag_name": "Logistics",
+          "uuid": "0757f560-2d30-5672-b7cb-96d271f0375f"
+        },
+        {
+          "index": 6,
+          "tag_name": "Financial",
+          "uuid": "11ad7479-6edb-5614-9144-76f0d197481a"
+        },
+        {
+          "index": 7,
+          "tag_name": "Daily_Operations",
+          "uuid": "3af2082a-46bd-54a4-8371-36d6830d6bac"
+        }
+      ],
+      "failed_uploads": []
+    }
+  },
+  "total_datasets": 3,
+  "successful_datasets": 3,
+  "failed_datasets": 0,
+  "end_time": "2025-05-27T15:40:13.321690",
+  "overall_success": true
+}

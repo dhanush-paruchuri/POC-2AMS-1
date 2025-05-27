@@ -1,0 +1,167 @@
+# config/relationships_config.yaml
+# Defines explicit relationships between datasets for SQL JOIN operations
+
+relationships:
+  # Customer to Move relationship (Primary)
+  - relationship_name: "customer_to_moves"
+    from_table: "raw_move_orders"
+    from_column: "CustomerID"
+    to_table: "raw_customer_master"
+    to_column: "ID"
+    relationship_type: "foreign_key"
+    cardinality: "many-to-one"
+    suggested_join_type: "INNER"
+    business_meaning: >
+      Links each move order to the customer who requested it. A customer can have 
+      multiple moves over time, but each move belongs to exactly one customer. 
+      This is the primary relationship for analyzing customer move history, 
+      service patterns, and customer lifetime value.
+    
+  # Customer Daily Snapshot relationship
+  - relationship_name: "daily_to_customer_master"
+    from_table: "raw_movedaily_snapshot"
+    from_column: "ID"
+    to_table: "raw_customer_master"
+    to_column: "ID"
+    relationship_type: "snapshot_reference"
+    cardinality: "one-to-one"
+    suggested_join_type: "LEFT"
+    business_meaning: >
+      Links daily snapshot records to the current customer master data using 
+      the same customer ID. This enables comparison between point-in-time 
+      snapshots and current customer status for change tracking and historical 
+      analysis. Use LEFT JOIN to include snapshot records even if customer 
+      no longer exists in master.
+    
+  # Move Daily Snapshot to Move Orders (if analyzing daily move snapshots)
+  - relationship_name: "daily_to_moves"
+    from_table: "raw_move_orders"
+    from_column: "CustomerID"
+    to_table: "raw_movedaily_snapshot"
+    to_column: "ID"
+    relationship_type: "customer_reference"
+    cardinality: "many-to-one"
+    suggested_join_type: "LEFT"
+    business_meaning: >
+      Connects move orders to the daily snapshot of customer data that was 
+      current at the time of move booking or execution. Useful for analyzing 
+      how customer information and preferences at a specific point in time 
+      influenced move characteristics and outcomes.
+
+# Additional relationship patterns for complex queries
+query_patterns:
+  # Three-way joins for comprehensive analysis
+  - pattern_name: "customer_move_history"
+    description: "Complete customer and move history analysis"
+    tables:
+      - "raw_customer_master"
+      - "raw_move_orders" 
+      - "raw_movedaily_snapshot"
+    join_logic: >
+      SELECT c.*, m.*, d.* 
+      FROM raw_customer_master c
+      LEFT JOIN raw_move_orders m ON c.ID = m.CustomerID
+      LEFT JOIN raw_movedaily_snapshot d ON c.ID = d.ID
+    business_use_case: >
+      Comprehensive customer analysis combining current customer data, 
+      complete move history, and point-in-time snapshots for trend analysis.
+      
+  - pattern_name: "customer_move_summary"
+    description: "Customer with aggregated move statistics"
+    tables:
+      - "raw_customer_master"
+      - "raw_move_orders"
+    join_logic: >
+      SELECT c.FirstName, c.LastName, c.EmailAddress,
+             COUNT(m.ID) as total_moves,
+             AVG(m.CrewRating) as avg_rating,
+             MAX(m.MovingDate) as last_move_date
+      FROM raw_customer_master c
+      LEFT JOIN raw_move_orders m ON c.ID = m.CustomerID
+      GROUP BY c.ID, c.FirstName, c.LastName, c.EmailAddress
+    business_use_case: >
+      Customer summary with move statistics for customer segmentation, 
+      loyalty analysis, and personalized marketing campaigns.
+
+# Foreign key validation rules
+validation_rules:
+  - rule_name: "customer_move_integrity"
+    description: "Ensure all moves have valid customer references"
+    validation_sql: >
+      SELECT COUNT(*) as orphaned_moves 
+      FROM raw_move_orders m 
+      LEFT JOIN raw_customer_master c ON m.CustomerID = c.ID 
+      WHERE c.ID IS NULL AND m.CustomerID IS NOT NULL
+    expected_result: 0
+    
+  - rule_name: "daily_snapshot_coverage"
+    description: "Check daily snapshot coverage against customer master"
+    validation_sql: >
+      SELECT 
+        (SELECT COUNT(*) FROM raw_movedaily_snapshot) as snapshot_count,
+        (SELECT COUNT(*) FROM raw_customer_master) as master_count,
+        (SELECT COUNT(*) FROM raw_movedaily_snapshot d 
+         INNER JOIN raw_customer_master c ON d.ID = c.ID) as matched_count
+    expected_result: "snapshot_count should be close to master_count for recent snapshots"
+
+# Query optimization hints
+optimization_hints:
+  indexes_recommended:
+    - table: "raw_customer_master"
+      columns: ["ID"]
+      type: "PRIMARY KEY"
+      
+    - table: "raw_move_orders"
+      columns: ["CustomerID"]
+      type: "FOREIGN KEY INDEX"
+      reason: "Frequent joins to customer master"
+      
+    - table: "raw_move_orders"
+      columns: ["MovingDate"]
+      type: "DATE INDEX"
+      reason: "Frequent date range queries"
+      
+    - table: "raw_movedaily_snapshot"
+      columns: ["ID"]
+      type: "PRIMARY KEY"
+      
+    - table: "raw_movedaily_snapshot"
+      columns: ["Status", "VIP"]
+      type: "COMPOSITE INDEX"
+      reason: "Common filtering criteria"
+
+# Business intelligence query templates
+bi_query_templates:
+  - template_name: "customer_move_frequency"
+    description: "Analyze how often customers move"
+    sql_template: >
+      WITH customer_move_stats AS (
+        SELECT 
+          c.ID,
+          c.FirstName + ' ' + c.LastName as customer_name,
+          COUNT(m.ID) as move_count,
+          MIN(m.MovingDate) as first_move,
+          MAX(m.MovingDate) as last_move,
+          AVG(DATEDIFF(day, LAG(m.MovingDate) OVER (PARTITION BY c.ID ORDER BY m.MovingDate), m.MovingDate)) as avg_days_between_moves
+        FROM raw_customer_master c
+        LEFT JOIN raw_move_orders m ON c.ID = m.CustomerID
+        GROUP BY c.ID, c.FirstName, c.LastName
+      )
+      SELECT * FROM customer_move_stats 
+      WHERE move_count > 1
+      ORDER BY move_count DESC
+      
+  - template_name: "lead_source_effectiveness"
+    description: "Analyze which lead sources convert to actual moves"
+    sql_template: >
+      SELECT 
+        c.Source as lead_source,
+        COUNT(DISTINCT c.ID) as total_customers,
+        COUNT(DISTINCT m.CustomerID) as customers_with_moves,
+        COUNT(m.ID) as total_moves,
+        ROUND(COUNT(DISTINCT m.CustomerID) * 100.0 / COUNT(DISTINCT c.ID), 2) as conversion_rate,
+        AVG(m.CrewRating) as avg_satisfaction
+      FROM raw_customer_master c
+      LEFT JOIN raw_move_orders m ON c.ID = m.CustomerID
+      GROUP BY c.Source
+      ORDER BY conversion_rate DESC
